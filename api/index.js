@@ -3,10 +3,12 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const User = require('./models/User.js');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 require('dotenv').config(); //Load environment variable from .env file
 const app = express();
 
 const secret = bcrypt.genSaltSync(10); //Enscrpy the password 
+const jwtSecret = 'shjdhskjhfsh34678sd';
 
 app.use(express.json());
 app.use(cors({
@@ -25,6 +27,30 @@ app.get('/test',(req,res) => {
     
 });
 
+app.post('/login', async (req,res) => {
+
+    const { email, password } = req.body;
+    const userDoc = await User.findOne({email}); //Return a query object or null
+    //console.log(userDoc);
+
+    if(userDoc){
+        const passok = bcrypt.compareSync(password, userDoc.password); //Return a boolean val
+
+        if (passok){
+            jwt.sign({email:userDoc.email, _id:userDoc._id},jwtSecret,{}, (err,token) =>{ //3rd param indicates option, e.g. token expiration time, algo type... . Here set as an empty object, 4th is a callback function called in async mode
+                if (err) throw err;
+                res.cookie('token',token).json('Correct Password!');
+            }); //Create a JSON Web Token and return the token in a JSON string
+            
+        }else {
+            res.status(422).json("Incorrect Password");
+        }
+
+    }else{
+        res.status(422).json("User Name Not Found");
+    }
+});
+
 app.post('/register', async (req,res) => {
 
     const { name,email,password } = req.body;
@@ -40,12 +66,6 @@ app.post('/register', async (req,res) => {
     }catch(e){
         res.status(422).json(e);
     }
-    // const userDoc = await User.create({
-    //     name,
-    //     email,
-    //     password:bcrypt.hashSync(password,secret),
-    // });
-    // res.json(userDoc);
    
  });
 

@@ -8,7 +8,7 @@ export default function RegisterPage(){
     const [password, setPassword] = useState("");
 
     async function registerUser(ev){//This ev(event) refers to the submit action event
-        ev.preventDefault();
+        ev.preventDefault(); //To prevent browser from submitting the form(default behaviour when a form is submbitted). If doesn't have this line, there will be a  full page reload
         try{
             await axios.post('/register',{
                 name,
