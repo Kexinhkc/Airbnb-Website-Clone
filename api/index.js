@@ -39,7 +39,10 @@ app.post('/login', async (req,res) => {
         const passok = bcrypt.compareSync(password, userDoc.password); //Return a boolean val
 
         if (passok){
-            jwt.sign({email:userDoc.email, _id:userDoc._id},jwtSecret,{}, (err,token) =>{ //3rd param indicates option, e.g. token expiration time, algo type... . Here set as an empty object, 4th is a callback function called in async mode
+            jwt.sign({
+                email:userDoc.email, 
+                id:userDoc._id
+             },jwtSecret,{}, (err,token) =>{ //3rd param indicates option, e.g. token expiration time, algo type... . Here set as an empty object, 4th is a callback function called in async mode
                 if (err) throw err;
                 res.cookie('token',token).json(userDoc);
             }); //Create a JSON Web Token and return the token in a JSON string
@@ -52,6 +55,24 @@ app.post('/login', async (req,res) => {
         res.status(422).json("User Name Not Found");
     }
 });
+
+app.get('/profile', (req,res) =>{
+    const {token} = req.cookies;
+    
+    if (token){ //If there is a valid token, decrypt it 
+        jwt.verify(token,jwtSecret,{}, async (err,userData) => { //user is a chosen name for decoded payload, this param is auto included if a callback is provided
+            if (err) throw err;
+            const {name,email,_id} = await User.findById(userData.id);
+            res.json({name,email,_id});
+            // res.json(userData);
+        });
+
+    }else{
+        res.json(null);
+    }
+    
+ });
+
 
 app.post('/register', async (req,res) => {
 
@@ -69,20 +90,6 @@ app.post('/register', async (req,res) => {
         res.status(422).json(e);
     }
    
- });
-
- app.get('/profile', (req,res) =>{
-    const {token} = req.cookies;
-    if (token){ //If there is a valid token, decrypt it 
-        jwt.verify(token,jwtSecret,{}, (err,user) => {
-            if (err) throw err;
-            res.json(user);
-        });
-
-    }else{
-        res.json(null);
-    }
-    res.json({token});
  });
 
 app.listen(4000);//Start an express server and makes it listen for incoming http requests at port 4000. Once having the server, it can make use of the routes you have defined above

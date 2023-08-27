@@ -14,11 +14,12 @@ export default function LoginPage(){
     async function loginUser(ev) {
         ev.preventDefault();
         try{
-            const { data } = await axios.post('/login', {
+            const { data } = await axios.post('/login', {//In the Axios library, the response object contains the 'data' property that extracts the response body
                 email,
                 password,
             });
 
+            console.log(data);
             setUser(data); //Set the User state from UserContext component with the login credentials of user, if login successfully
 
             alert("Login Successful");
