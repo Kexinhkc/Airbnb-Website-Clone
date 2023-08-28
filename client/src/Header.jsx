@@ -44,7 +44,7 @@ export default function Header(){
 
                 </div>
 
-                {!!user && (
+                {!!user && ( //'!!' turns user a boolen
                     <div>
                     {user.name}
                     </div>

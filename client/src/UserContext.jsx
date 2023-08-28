@@ -5,7 +5,7 @@ export const UserContext = createContext({});
 
 export function UserContextProvider({children}){
     const [user, setUser] = useState(null);
-    const [ready,setReady] = useState(false); //If does't have the "ready" state, the login page will always load from the account page the "if" check is executed before the GET request in the useEffect below
+    const [ready,setReady] = useState(false); //If does't have the "ready" state, the login page will always load from the account page the "if" check(in AccountPage.jsx)is executed before the GET request in the useEffect below
 
     useEffect(() => {
         if (!user){

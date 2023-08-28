@@ -19,7 +19,7 @@ export default function LoginPage(){
                 password,
             });
 
-            console.log(data);
+            // console.log(data);
             setUser(data); //Set the User state from UserContext component with the login credentials of user, if login successfully
 
             alert("Login Successful");
