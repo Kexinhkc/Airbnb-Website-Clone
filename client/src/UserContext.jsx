@@ -12,6 +12,7 @@ export function UserContextProvider({children}){
             axios.get('/profile').then(({data}) => { //In the Axios library, the response object contains the 'data' property that extracts the response body
                 setUser(data);
                 setReady(true);
+                //console.log('ready is set')
             })
         }
 

@@ -23,7 +23,7 @@ export default function LoginPage(){
             setUser(data); //Set the User state from UserContext component with the login credentials of user, if login successfully
 
             alert("Login Successful");
-            setRedirect(true);
+            setRedirect(true); //Set the redirect to true when users log in successfully
 
         }catch(e){
             alert("Login Unsuccessful");
@@ -31,7 +31,7 @@ export default function LoginPage(){
     }
     
     if (redirect){
-        return <Navigate to={'/'} />
+        return <Navigate to={'/ '} />
     }
 
     return (

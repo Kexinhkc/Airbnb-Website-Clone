@@ -92,4 +92,8 @@ app.post('/register', async (req,res) => {
    
  });
 
+ app.post('/logout', (req,res) =>{
+    res.cookie('token','').json(true);
+ } );
+
 app.listen(4000);//Start an express server and makes it listen for incoming http requests at port 4000. Once having the server, it can make use of the routes you have defined above
