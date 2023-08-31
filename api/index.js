@@ -1,3 +1,4 @@
+//require() imports libraries and modules, the variable can be used to access all functionalities of the imported lib/modules
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -7,23 +8,37 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 require('dotenv').config(); //Load environment variable from .env file
 const app = express();
+const imageDownloader = require('image-downloader');
+const multer = require('multer');
+const fs = require('fs');
 
 const secret = bcrypt.genSaltSync(10); //Enscrpy the password 
 const jwtSecret = 'shjdhskjhfsh34678sd';
 
+///////////////////////////////////////////////////////////////////////////
+
+//app.use() is a middleware function that adds middleware to the app's request processing pipeline. The function got access to the 'req' and 'res' objects and perform tasks such as authentication, data parsing etc 
 app.use(express.json());
 app.use(cors({
     credentials: true,
     origin:'http://localhost:5173',
 }));
+
+//The 'cookie-parser' middleware is used to parse cookies from incoming HTTP reqs and makes them available in the 'req' obj
 app.use(cookieParser());
+
+//Set up a static file server to serve files from a directory '__dirname + '/uploads'. A pro of using a server is that server can cache images in user's browser.
+//The first '/uploads' is the path you want to use to access the images. Requests to '/uploads' will be mapped to the images in the directory "__dirname + '/uploads' "
+
+app.use('/uploads',express.static(__dirname + '/uploads'));
 
 // console.log(process.env.MONGO_URL);
 mongoose.connect(process.env.MONGO_URL);
 //mongoose.connect('mongodb+srv://kexin:459000@cluster0.o3uceuw.mongodb.net/?retryWrites=true&w=majority');
 
 
-
+///////////////////////////////////////////////////////////////////////////
+//Below code is called 'endpoint route handlers'
 app.get('/test',(req,res) => {
     res.json('test ok');
     
@@ -95,5 +110,36 @@ app.post('/register', async (req,res) => {
  app.post('/logout', (req,res) =>{
     res.cookie('token','').json(true);
  } );
+
+ app.post('/upload-by-link', async (req,res) =>{
+    const {link} = req.body;
+    const newName = 'photo' + Date.now() + '.jpg';
+
+    await imageDownloader.image({
+        url: link,
+        //'__dirname' is the path of the current directory(i.e./Users/apple/GitRepos/Airbnb-Website-Clone/api)
+        dest: __dirname + '/uploads/' + newName,
+    });
+
+    res.json(newName);
+ });
+
+ //'multer' is a middleware for handling file uploads
+ const photosMiddleware = multer({dest:'uploads'});//'uploads' is where uploaded photos should be stored
+ //'photos' inside array() is the field name of the files on the form data
+ app.post('/upload',photosMiddleware.array('photos',100),(req,res) =>{
+    const files = req.files;//Uploaded files are accessed using req.file
+    const uploadedFiles = []; 
+    //rename the files with extention(e.g.'.jpg')
+    for (let i = 0; i < files.length; i++){
+        const {path, originalname} = files[i];
+        const originalNameParts = originalname.split('.'); //The var contains an arr of parts before and after '.'. Example of original name: 'originalname:"cozy-apartment-scandinavian-style-kitchen-front.jpeg
+        const ext = originalNameParts[originalNameParts.length - 1];
+        const newPath = path +'.' + ext;
+        fs.renameSync(path,newPath);//'path' is the old path/name of the file that needs to be renamed, after rename the same file can be accessed using the name 'newPath'. 
+        uploadedFiles.push(newPath.replace('uploads/',''));
+    }
+    res.json(uploadedFiles);
+ });
 
 app.listen(4000);//Start an express server and makes it listen for incoming http requests at port 4000. Once having the server, it can make use of the routes you have defined above
