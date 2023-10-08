@@ -11,8 +11,11 @@ const app = express();
 const imageDownloader = require('image-downloader');
 const multer = require('multer');
 const fs = require('fs');
+const Place = require('./models/Place.js');
+const Booking = require('./models/Booking.js')
 
-const secret = bcrypt.genSaltSync(10); //Enscrpy the password 
+
+const secret = bcrypt.genSaltSync(10); //Enscrpt the password 
 const jwtSecret = 'shjdhskjhfsh34678sd';
 
 ///////////////////////////////////////////////////////////////////////////
@@ -36,6 +39,15 @@ app.use('/uploads',express.static(__dirname + '/uploads'));
 mongoose.connect(process.env.MONGO_URL);
 //mongoose.connect('mongodb+srv://kexin:459000@cluster0.o3uceuw.mongodb.net/?retryWrites=true&w=majority');
 
+function getUserDataFromReq(req){
+    return new Promise ((resolve, rejext) => {
+        jwt.verify(req.cookies.token, jwtSecret, {}, async (err,userData) => {
+            if (err) throw err;
+            resolve(userData);
+        });
+    });
+   
+}
 
 ///////////////////////////////////////////////////////////////////////////
 //Below code is called 'endpoint route handlers'
@@ -113,13 +125,14 @@ app.post('/register', async (req,res) => {
 
  app.post('/upload-by-link', async (req,res) =>{
     const {link} = req.body;
+    console.log(link);
     const newName = 'photo' + Date.now() + '.jpg';
 
     await imageDownloader.image({
         url: link,
         //'__dirname' is the path of the current directory(i.e./Users/apple/GitRepos/Airbnb-Website-Clone/api)
         dest: __dirname + '/uploads/' + newName,
-    });
+    }); 
 
     res.json(newName);
  });
@@ -141,5 +154,77 @@ app.post('/register', async (req,res) => {
     }
     res.json(uploadedFiles);
  });
+
+ app.post('/place', (req,res) => {
+    const {token} = req.cookies;
+    const { title,address,addedPhotos,description,perks,extraInfo,checkIn,checkOut,maxGuests,price } = req.body;
+
+    jwt.verify(token,jwtSecret,{}, async (err,userData) => { //user is a chosen name for decoded payload, this param is auto included if a callback is provided
+        if (err) throw err;
+        
+        const placeDoc = await Place.create({
+            owner:userData.id,
+            title,address,photos:addedPhotos,description,perks,extraInfo,checkIn,checkOut,maxGuests,price, 
+        });
+
+        res.json(placeDoc);
+    });
+})
+
+app.get('/places', async (req,res) => {
+    res.json( await Place.find());
+})
+
+app.get('/user-places', (req,res) => {
+    const {token} = req.cookies;
+    jwt.verify(token,jwtSecret,{}, async (err,userData) => {
+
+        const {id} = userData;
+        res.json(await Place.find({owner:id}));
+    }); 
+});
+
+app.get('/places/:id', async (req,res) => {
+    const {id} = req.params;
+    res.json(await Place.findById(id));
+})
+
+app.put('/place', async (req,res) => {
+    const {token} = req.cookies;
+    const {id,title,address,addedPhotos,description,perks,extraInfo,checkIn,checkOut,maxGuests,price } = req.body;
+
+    jwt.verify(token,jwtSecret,{}, async (err,userData) => {
+        const placeDoc = await Place.findById(id);
+        if (userData.id === placeDoc.owner.toString()){
+            placeDoc.set({
+                
+                title,address,photos:addedPhotos,description,perks,extraInfo,checkIn,checkOut,price,maxGuests,
+            })
+
+            await placeDoc.save();
+            res.json('Okay');
+        }
+    })
+
+})
+
+app.post('/bookings', async (req,res) => {
+    const userData = await getUserDataFromReq(req);
+    const {checkIn, checkOut, numOfGuests, name, phone, place,price} = req.body;
+    // console.log(name);
+    Booking.create({
+        checkIn, checkOut, numOfGuests, name, phone, place,price,user:userData.id,
+    }).then((doc) => {
+        res.json(doc);
+    }).catch((err) => {
+        throw err; 
+    });
+});
+
+app.get('/bookings', async (req,res) => {
+    const userData = await getUserDataFromReq(req);
+    res.json(await Booking.find({user:userData.id}).populate('place')); //'populate' together with the 'ref' in the database schema returns all properties data from the 'Place' database 
+    
+})
 
 app.listen(4000);//Start an express server and makes it listen for incoming http requests at port 4000. Once having the server, it can make use of the routes you have defined above
