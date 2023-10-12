@@ -1,1 +1,1 @@
-# Airbnb-Website-Clone
+# Mini-Airbnb
