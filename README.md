@@ -1,1 +1,1 @@
-# Mini-Airbnb-Website
+# Mini-Airbnb
